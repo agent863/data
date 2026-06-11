@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全站醫師表現週報 — W23 (2026/06/01–06/07)</title>
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-light: #eff6ff;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --yellow: #d97706;
+      --yellow-light: #fffbeb;
+      --gray: #6b7280;
+      --gray-light: #f9fafb;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-secondary: #4b5563;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif; background: #f3f4f6; color: var(--text); line-height: 1.6; }
+    #gate { position: fixed; inset: 0; background: #1e293b; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .gate-box { background: #fff; padding: 2.5rem; border-radius: 12px; width: 320px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,.4); }
+    .gate-box h2 { font-size: 1.2rem; color: var(--text); margin-bottom: .5rem; }
+    .gate-box p { font-size: .875rem; color: var(--gray); margin-bottom: 1.5rem; }
+    .gate-box input { width: 100%; padding: .6rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; text-align: center; letter-spacing: .2em; margin-bottom: 1rem; outline: none; }
+    .gate-box input:focus { border-color: var(--blue); }
+    .gate-box button { width: 100%; padding: .7rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; }
+    .gate-box button:hover { background: #1d4ed8; }
+    .gate-error { color: var(--red); font-size: .85rem; margin-top: .5rem; display: none; }
+    #report { display: none; }
+    .wrapper { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+    .report-header { background: linear-gradient(135deg, #1e3a8a, #1e40af); color: #fff; border-radius: 12px; padding: 2rem 2.5rem; margin-bottom: 2rem; }
+    .report-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
+    .report-header .meta { font-size: .875rem; opacity: .85; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .report-header .meta span::before { content: "▸ "; }
+    .section { background: #fff; border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .section-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 1.25rem; padding-bottom: .6rem; border-bottom: 2px solid var(--blue); display: flex; align-items: center; gap: .5rem; }
+    .section-title .badge { background: var(--blue); color: #fff; font-size: .7rem; font-weight: 700; padding: .15rem .45rem; border-radius: 4px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi { border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .kpi.up { background: var(--green-light); border: 1px solid #bbf7d0; }
+    .kpi.down { background: var(--red-light); border: 1px solid #fecaca; }
+    .kpi.neutral { background: var(--gray-light); border: 1px solid var(--border); }
+    .kpi .kpi-label { font-size: .78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: .3rem; }
+    .kpi .kpi-value { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+    .kpi.up .kpi-value { color: var(--green); }
+    .kpi.down .kpi-value { color: var(--red); }
+    .kpi.neutral .kpi-value { color: var(--text); }
+    .kpi .kpi-change { font-size: .8rem; font-weight: 600; margin-top: .35rem; }
+    .kpi.up .kpi-change { color: var(--green); }
+    .kpi.down .kpi-change { color: var(--red); }
+    .kpi .kpi-prev { font-size: .75rem; color: var(--gray); }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th { background: var(--gray-light); color: var(--text-secondary); font-size: .8rem; font-weight: 600; text-align: left; padding: .65rem .85rem; border-bottom: 2px solid var(--border); }
+    td { padding: .6rem .85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-light); }
+    .up-text { color: var(--green); font-weight: 600; }
+    .down-text { color: var(--red); font-weight: 600; }
+    .new-tag { background: #fef3c7; color: #92400e; font-size: .7rem; font-weight: 700; padding: .1rem .35rem; border-radius: 4px; margin-left: .3rem; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .doctor-card { border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .doctor-card:last-child { margin-bottom: 0; }
+    .doctor-card-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+    .doctor-name { font-size: 1.05rem; font-weight: 700; }
+    .doctor-sub { font-size: .8rem; color: var(--gray); margin-top: .15rem; }
+    .doctor-badge { font-size: .7rem; font-weight: 700; padding: .2rem .5rem; border-radius: 20px; }
+    .doctor-badge.active { background: var(--green-light); color: var(--green); border: 1px solid #bbf7d0; }
+    .doctor-badge.zero { background: #f3f4f6; color: var(--gray); border: 1px solid var(--border); }
+    .doctor-badge.pilot { background: var(--yellow-light); color: var(--yellow); border: 1px solid #fde68a; }
+    .doctor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+    .stat-box { text-align: center; background: var(--gray-light); border-radius: 8px; padding: .7rem .5rem; }
+    .stat-box .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--blue); }
+    .stat-box .stat-lbl { font-size: .7rem; color: var(--gray); margin-top: .15rem; }
+    .note-box { background: var(--yellow-light); border: 1px solid #fde68a; border-radius: 8px; padding: .85rem 1rem; font-size: .875rem; color: #78350f; margin-top: .85rem; }
+    .insight-card { border-left: 4px solid var(--blue); background: var(--blue-light); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .insight-card:nth-child(3n+2) { border-left-color: var(--green); background: var(--green-light); }
+    .insight-card:nth-child(3n+3) { border-left-color: var(--yellow); background: var(--yellow-light); }
+    .insight-card h4 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+    .insight-card p { font-size: .875rem; color: var(--text-secondary); }
+    .insight-card ul { font-size: .875rem; color: var(--text-secondary); padding-left: 1.2rem; margin-top: .35rem; }
+    .footer { text-align: center; font-size: .8rem; color: var(--gray); padding: 1.5rem 0 2rem; }
+    .source-chip { display: inline-block; background: var(--blue-light); color: var(--blue); font-size: .7rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; margin-left: .3rem; }
+    .subsection-title { font-size: .95rem; font-weight: 700; color: var(--text); margin: 1.25rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px dashed var(--border); }
+    .observation { font-size: .875rem; color: var(--text-secondary); background: var(--gray-light); border-radius: 8px; padding: .85rem 1rem; margin-top: .85rem; }
+    .observation ul { padding-left: 1.2rem; }
+    .observation li { margin-bottom: .3rem; }
+  </style>
+</head>
+<body>
+
+<!-- Password Gate -->
+<div id="gate">
+  <div class="gate-box">
+    <h2>🔒 週報存取驗證</h2>
+    <p>請輸入報告密碼以繼續</p>
+    <input type="password" id="pw" placeholder="輸入密碼" maxlength="20" onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()">進入報告</button>
+    <div class="gate-error" id="pw-error">密碼錯誤，請重試</div>
+  </div>
+</div>
+
+<div id="report">
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>全站醫師表現週報 — W23</h1>
+    <div class="meta">
+      <span>報告週期：2026/06/01（一）– 06/07（日）</span>
+      <span>產生時間：2026/06/11 手動彙整</span>
+      <span>數據來源：GA4 ＋ Looker Studio</span>
+    </div>
+  </div>
+
+  <!-- Section 1: Overall Performance -->
+  <div class="section">
+    <div class="section-title"><span class="badge">1</span>全站整體表現 W23 vs W22</div>
+
+    <div class="kpi-grid">
+      <div class="kpi up">
+        <div class="kpi-label">活躍使用者</div>
+        <div class="kpi-value">91</div>
+        <div class="kpi-change">↑ +23.0% vs W22</div>
+        <div class="kpi-prev">W22：74</div>
+      </div>
+      <div class="kpi up">
+        <div class="kpi-label">新使用者</div>
+        <div class="kpi-value">74</div>
+        <div class="kpi-change">↑ +32.1% vs W22</div>
+        <div class="kpi-prev">W22：56</div>
+      </div>
+      <div class="kpi up">
+        <div class="kpi-label">平均參與時間</div>
+        <div class="kpi-value">2:18</div>
+        <div class="kpi-change">↑ +25.1% vs W22</div>
+        <div class="kpi-prev">W22：1:50</div>
+      </div>
+      <div class="kpi up">
+        <div class="kpi-label">事件計數</div>
+        <div class="kpi-value">3,099</div>
+        <div class="kpi-change">↑ +20.0% vs W22</div>
+        <div class="kpi-prev">W22：2,583</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>指標</th>
+          <th>W23</th>
+          <th>W22</th>
+          <th>變化</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>活躍使用者 <span class="source-chip">GA4</span></td><td>91</td><td>74</td><td class="up-text">↑ +23.0%</td></tr>
+        <tr><td>新使用者 <span class="source-chip">GA4</span></td><td>74</td><td>56</td><td class="up-text">↑ +32.1%</td></tr>
+        <tr><td>平均參與時間 <span class="source-chip">GA4</span></td><td>2分18秒</td><td>1分50秒</td><td class="up-text">↑ +25.1%</td></tr>
+        <tr><td>事件計數 <span class="source-chip">GA4</span></td><td>3,099</td><td>2,583</td><td class="up-text">↑ +20.0%</td></tr>
+        <tr><td>總瀏覽次 <span class="source-chip">Looker</span></td><td>727</td><td>715</td><td class="up-text">↑ +1.7%</td></tr>
+        <tr><td>全站使用者 <span class="source-chip">Looker</span></td><td>95</td><td>83</td><td class="up-text">↑ +14.5%</td></tr>
+        <tr><td>每人工作階段數 <span class="source-chip">Looker</span></td><td>2.09</td><td>2.27</td><td class="down-text">↓ −7.9%</td></tr>
+        <tr><td>平均工作階段時長 <span class="source-chip">Looker</span></td><td>8分28秒</td><td>6分42秒</td><td class="up-text">↑ +26.2%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation" style="margin-top:1rem">
+      <strong>解讀：</strong> W23 全面反彈，活躍使用者突破 90 人，較 W22 成長 23%，已超越月均水準（約 80 人）。尤其平均參與時間達 2 分 18 秒（+25%），顯示本週訪客互動品質提升明顯。工作階段數（2.09）略低於 W22（2.27），表示部分使用者單次長時間深入閱讀，而非多次短暫瀏覽。<br><br>
+      <strong>流量來源（W23 活躍使用者）：</strong> Direct 50 人（↑38.9%）· cceye-counter/qr 14 人（↑16.7%）· cceye-surgery-waiting/qr 7 人（↑30%）· cceye-waiting/qr 5 人（↑25%）· facebook.com/referral 5 人（↑400% <span class="new-tag">NEW</span>）· portaly.cc/referral 4 人（↑300% <span class="new-tag">NEW</span>）· google/organic 1 人（↓80%）
+    </div>
+  </div>
+
+  <!-- Section 1.1: Front-end Article Views -->
+  <div class="section">
+    <div class="section-title"><span class="badge">1.1</span>前台文章瀏覽 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">GA4 · 篩選：含 /doctor-N/ 且不含 /category/ 或 /organization/</small></div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>文章標題</th><th>醫師</th><th>瀏覽次</th><th>使用者</th><th>參與時間</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><a href="https://medify.com.tw/doctor-10/laser-eye-surgery/近視雷射手術安全嗎？設備差異與手術醫師經驗的-2/" target="_blank">近視雷射手術安全嗎？設備差異與手術醫師經驗</a></td>
+          <td>何宜儒 / doctor-10</td><td>11</td><td>1</td><td>9秒</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><a href="https://medify.com.tw/doctor-10/laser-blended-vision/手術原理｜不用一次看清楚，老花雷射可以做「階-2/" target="_blank">手術原理｜不用一次看清楚，老花雷射可以做「階段調整」</a></td>
+          <td>何宜儒 / doctor-10</td><td>7</td><td>2</td><td>25秒</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><a href="https://medify.com.tw/doctor-43/睡眠呼吸中止症/整合式睡眠手術與整體治療/" target="_blank">整合式睡眠手術與整體治療</a></td>
+          <td>蔡明劭 / doctor-43</td><td>7</td><td>7</td><td>9秒</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><a href="https://medify.com.tw/doctor-94/presbyopia-correction/lbv-老花雷射：術前、術中、術後注意事項一次看懂-3/" target="_blank">LBV 老花雷射：術前、術中、術後注意事項一次看懂</a></td>
+          <td>陳夢柔 / doctor-94</td><td>7</td><td>3</td><td>27秒</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="observation">
+      <strong>觀察：</strong>
+      <ul>
+        <li>Doctor-10 近視雷射文章本週以 11 次頁面瀏覽奪冠，但使用者僅 1 人（每人平均 11 次），可能為深度研究型訪客反覆閱讀，或測試行為，需搭配停留時間（9 秒/次）判斷。</li>
+        <li>Doctor-43 整合式睡眠手術文章 7 次瀏覽 × 7 位使用者（1:1），代表 7 個不同訪客各自發現此文，是真實的有機覆蓋，品質最高。</li>
+        <li>Doctor-94 LBV 文章 7 次 3 人、平均 27 秒，閱讀深度在本週文章中最佳。</li>
+        <li>Doctor-10 老花雷射「階段調整」文章（25 秒、2 人）閱讀品質亦佳。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 1.4: Top Articles by post_view -->
+  <div class="section">
+    <div class="section-title"><span class="badge">1.4</span>熱門文章排行 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">GA4 post_view 事件 · by post_id</small></div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>文章標題</th><th>醫師</th><th>post_view 次數</th><th>使用者</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>近視雷射手術安全嗎？</td><td>doctor-10</td><td>8</td><td>1</td></tr>
+        <tr><td>2</td><td>手術原理｜老花雷射階段式調整</td><td>doctor-10</td><td>7</td><td>2</td></tr>
+        <tr><td>3</td><td>LBV 老花雷射：術前、術中、術後注意事項</td><td>doctor-94</td><td>5</td><td>3</td></tr>
+        <tr><td>4</td><td>健康保健｜葉黃素</td><td>（分類頁）</td><td>3</td><td>2</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation">
+      post_view 事件由前台 JS 觸發，代表使用者實際開啟並載入完整文章頁面（有別於 GA4 page_view 可能含重新整理）。本週 post_view 事件總計 27 次可識別文章，近視雷射和老花雷射相關主題合計佔約 70%。
+    </div>
+  </div>
+
+  <!-- Section 1.5: Doctor Article Views Ranking -->
+  <div class="section">
+    <div class="section-title"><span class="badge">1.5</span>醫師文章總瀏覽排行 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">GA4 post_view 事件 · by doctor_id</small></div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>醫師</th><th>post_view 總次數（估）</th><th>備註</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>何宜儒 / doctor-10</td><td>～19</td><td>近視雷射(8) + 老花雷射(7) + 其他多篇</td></tr>
+        <tr><td>2</td><td>陳夢柔 / doctor-94</td><td>5</td><td>LBV 老花雷射 × 1 篇</td></tr>
+        <tr><td>3</td><td>蔡明劭 / doctor-43</td><td>～3</td><td>睡眠手術相關文章</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation">
+      Doctor-10 文章生態系仍主導全站 post_view 流量，但 doctor-94 和 doctor-43 已有可識別的有機流量。Doctor-44、Doctor-76 本週 post_view 為零。
+    </div>
+  </div>
+
+  <!-- Section 1.6: Category Ranking -->
+  <div class="section">
+    <div class="section-title"><span class="badge">1.6</span>文章分類排行 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">GA4 post_view 事件 · by post_category</small></div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>文章分類</th><th>post_view 次數</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>乾眼治療</td><td>8</td></tr>
+        <tr><td>2</td><td>老花雷射手術</td><td>8</td></tr>
+        <tr><td>3</td><td>近視雷射</td><td>5</td></tr>
+        <tr><td>4</td><td>老花雷射手術（第 2 頁）</td><td>3</td></tr>
+        <tr><td>5</td><td>睡眠呼吸中止症</td><td>3</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation">
+      乾眼治療與老花雷射手術並列第一（各 8 次），反映診所 QR Code 場景（手術等候 + 掛號）的患者興趣組合——術前探索老花解決方案，術後接觸乾眼保養資訊。
+    </div>
+  </div>
+
+  <!-- Section 2: 領航醫師 -->
+  <div class="section">
+    <div class="section-title"><span class="badge">2</span>領航醫師追蹤 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">Doctor-43 蔡明劭 · Doctor-44 孫啟欽 · Doctor-76 徐邦瀚</small></div>
+    <p style="font-size:.85rem;color:var(--gray);margin-bottom:1.25rem">領航醫師每週固定回報，不論是否有突出表現。</p>
+
+    <!-- Doctor-43 -->
+    <div class="doctor-card">
+      <div class="doctor-card-header">
+        <div>
+          <div class="doctor-name">Doctor-43 — 蔡明劭醫師 <span class="doctor-badge pilot">領航醫師</span></div>
+          <div class="doctor-sub">有流量 · 1 篇文章 · <a href="https://medify.com.tw/doctor-43/" target="_blank">medify.com.tw/doctor-43/</a></div>
+        </div>
+        <span class="doctor-badge active">有流量</span>
+      </div>
+      <div class="doctor-stats">
+        <div class="stat-box"><div class="stat-val">17</div><div class="stat-lbl">首頁瀏覽次（GA4）</div></div>
+        <div class="stat-box"><div class="stat-val">8</div><div class="stat-lbl">首頁使用者</div></div>
+        <div class="stat-box"><div class="stat-val">13秒</div><div class="stat-lbl">平均參與時間</div></div>
+      </div>
+      <div class="subsection-title" style="margin-top:1rem">Top 文章（本週有瀏覽紀錄）</div>
+      <table>
+        <thead><tr><th>文章</th><th>瀏覽次</th><th>使用者</th><th>參與時間</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><a href="https://medify.com.tw/doctor-43/睡眠呼吸中止症/整合式睡眠手術與整體治療/" target="_blank">整合式睡眠手術與整體治療</a></td>
+            <td>7</td><td>7</td><td>9秒</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note-box" style="margin-top:.85rem">
+        本週 Doctor-43 首頁累積 17 次瀏覽，整合式睡眠手術文章 7 人次（1:1 比例）表現亮眼。首頁平均 13 秒偏短，建議增加首頁內容摘要或導引連結，延長停留時間。
+      </div>
+    </div>
+
+    <!-- Doctor-44 -->
+    <div class="doctor-card">
+      <div class="doctor-card-header">
+        <div>
+          <div class="doctor-name">Doctor-44 — 孫啟欽醫師 <span class="doctor-badge pilot">領航醫師</span></div>
+          <div class="doctor-sub"><a href="https://medify.com.tw/doctor-44/" target="_blank">medify.com.tw/doctor-44/</a></div>
+        </div>
+        <span class="doctor-badge zero">本週零流量</span>
+      </div>
+      <div class="note-box">
+        📊 W23 無任何頁面瀏覽紀錄（GA4 搜尋 doctor-44 回傳 0 使用者）。<br>
+        請確認 QR Code 是否已部署並正確曝光於診間，或確認 UTM 參數設定是否正確。
+      </div>
+    </div>
+
+    <!-- Doctor-76 -->
+    <div class="doctor-card">
+      <div class="doctor-card-header">
+        <div>
+          <div class="doctor-name">Doctor-76 — 徐邦瀚醫師 <span class="doctor-badge pilot">領航醫師</span></div>
+          <div class="doctor-sub"><a href="https://medify.com.tw/doctor-76/" target="_blank">medify.com.tw/doctor-76/</a></div>
+        </div>
+        <span class="doctor-badge zero">本週零流量</span>
+      </div>
+      <div class="note-box">
+        📊 W23 無任何頁面瀏覽紀錄（GA4 搜尋 doctor-76 回傳 0 使用者）。<br>
+        請確認 QR Code 部署狀態，若尚未部署請排程本週完成，以便下週起進入正式追蹤。
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Doctor-10 QR Analysis -->
+  <div class="section">
+    <div class="section-title"><span class="badge">3</span>澄清眼科 — Doctor-10 何宜儒醫師 QR Code 場景分析</div>
+
+    <div class="doctor-card" style="border-color:var(--blue);background:var(--blue-light)">
+      <div class="doctor-card-header">
+        <div>
+          <div class="doctor-name">Doctor-10 — 何宜儒醫師 <span class="doctor-badge active" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">澄清眼科 · 台北澄清</span></div>
+          <div class="doctor-sub">本週主力醫師 · <a href="https://medify.com.tw/doctor-10/" target="_blank">medify.com.tw/doctor-10/</a></div>
+        </div>
+      </div>
+      <div class="doctor-stats">
+        <div class="stat-box"><div class="stat-val">111</div><div class="stat-lbl">首頁瀏覽次（GA4）</div></div>
+        <div class="stat-box"><div class="stat-val">48</div><div class="stat-lbl">使用者（GA4）</div></div>
+        <div class="stat-box"><div class="stat-val">31秒</div><div class="stat-lbl">平均參與時間</div></div>
+      </div>
+    </div>
+
+    <div class="subsection-title">QR Code 場景瀏覽（Looker Studio）</div>
+    <table>
+      <thead>
+        <tr><th>QR 地點</th><th>瀏覽次</th><th>使用者</th><th>參與時間</th><th>參與率</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>掛號櫃檯</td><td>83</td><td>56</td><td>00:15:17</td><td>31.71%</td></tr>
+        <tr><td>手術等候區</td><td>74</td><td>33</td><td>00:08:14</td><td>20.9%</td></tr>
+        <tr><td>候診區</td><td>25</td><td>16</td><td>00:07:54</td><td>44%</td></tr>
+        <tr><td>台北電視牆（tvwall）</td><td>4</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>台北診間（consult）</td><td>2</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>台北影片（video）</td><td>1</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation">
+      <ul>
+        <li><strong>掛號櫃檯</strong>以 56 位使用者連續兩週稱霸，本週比手術等候區多出約 70%（33 人），是最具規模的 QR 觸及場景。</li>
+        <li><strong>手術等候區</strong>瀏覽次（74）仍高，但使用者（33）相對少，每人平均瀏覽 2.2 頁，顯示術前等待是深度探索的好時機。</li>
+        <li><strong>候診區</strong>參與率最高（44%），使用者意圖最明確，建議測試將 CTA（預約複診、加入 LINE）擺在候診區入口頁。</li>
+        <li>參與時間：掛號 15:17 ＞ 手術 8:14 ≈ 候診 7:54，掛號場景使用者花最多時間瀏覽。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 5: vs Monthly Average -->
+  <div class="section">
+    <div class="section-title"><span class="badge">5</span>與上月平均相比 W23 vs 月均</div>
+
+    <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1rem">
+      Looker Studio 近 4 週（5/19–6/7）參考：W20 至 W23 週均約 <strong>710–727 次瀏覽</strong>、<strong>80–95 人</strong>。
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>指標</th><th>W23</th><th>月週均（估）</th><th>對月均差異</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>活躍使用者（GA4）</td><td>91</td><td>～80</td><td class="up-text">↑ +13.8%</td></tr>
+        <tr><td>總瀏覽次（Looker）</td><td>727</td><td>～710</td><td class="up-text">↑ +2.4%</td></tr>
+        <tr><td>總使用者（Looker）</td><td>95</td><td>～85</td><td class="up-text">↑ +11.8%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="observation" style="margin-top:1rem">
+      W23 各項指標均高於月均估值，確認本週是上升週次而非偶發。活躍使用者突破 90 人為近期高點，若 W24 能維持 85+ 人可視為結構性成長。
+    </div>
+  </div>
+
+  <!-- Section 6: Insights -->
+  <div class="section">
+    <div class="section-title"><span class="badge">6</span>洞察與建議</div>
+
+    <div class="insight-card">
+      <h4>Insight 01｜W23 全面正成長，活躍使用者突破月均</h4>
+      <p>四大核心指標（使用者 +23%、新使用者 +32%、參與時間 +25%、事件 +20%）全部正成長，且對月均也超出 10–14%，W23 是有效的上升週次。</p>
+      <ul>
+        <li>以月均 80 人為基準線，W23 的 91 人代表已超越一個標準偏差，值得持續觀察 W24 是否能維持。</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>Insight 02｜Facebook 和 portaly.cc 新流量入口大爆發</h4>
+      <p>facebook.com/referral +400%（5 人，W22 僅 1 人）、portaly.cc/referral +300%（4 人，W22 僅 1 人），兩個新管道合計帶入 9 人，佔本週非診所 QR 流量的重要比重。</p>
+      <ul>
+        <li>確認 FB 貼文或 portaly 個人頁在 W23 是否有特定曝光，複製成功經驗。</li>
+        <li>google/organic 本週僅 1 人（↓80%），SEO 可見性需持續補充文章。</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>Insight 03｜Doctor-43 睡眠手術文章 7 人次，質量俱佳</h4>
+      <p>整合式睡眠手術文章 7 次瀏覽 × 7 位使用者（1:1），是本週品質最高的單篇文章流量，代表真實有機覆蓋，而非同一人重複閱讀。</p>
+      <ul>
+        <li>目前首頁停留時間（13 秒）偏短，建議強化首頁摘要設計或加入「更多文章」導引。</li>
+        <li>Doctor-43 文章目前只有少數篇數，可優先補充 2–3 篇，擴大內容生態。</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>Insight 04｜掛號櫃檯以 56 人持續稱霸 QR 場景</h4>
+      <p>本週掛號櫃檯帶來 56 位使用者，是手術等候區（33 人）的 1.7 倍，且參與時間長達 15 分鐘，是全站最高品質的場景之一。</p>
+      <ul>
+        <li>建議在掛號 QR 落地頁測試「加入 LINE」或「預約複診」CTA，承接高意圖使用者。</li>
+        <li>候診區參與率最高（44%），是強化 CTA 測試的次優場景。</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>Insight 05｜Doctor-44 和 Doctor-76 本週零流量，需確認 QR 部署</h4>
+      <p>兩位領航醫師 W23 在 GA4 均無任何頁面瀏覽紀錄，需確認：（1）QR Code 是否實體部署？（2）UTM 參數是否正確設定？</p>
+      <ul>
+        <li>Doctor-44 在 W22 仍有 23 次瀏覽，W23 驟降為零，需排查是否 QR Code 被移除或換位。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 7: Gaps -->
+  <div class="section">
+    <div class="section-title"><span class="badge">7</span>數據報表不足之處 <small style="font-weight:400;font-size:.875rem;color:var(--gray)">可在 Looker 增加</small></div>
+
+    <ol style="padding-left:1.3rem;font-size:.875rem;color:var(--text-secondary);line-height:1.9">
+      <li><strong>文章 URL 在 Looker 無法直接過濾</strong> — Looker Studio 目前以 page title 為維度，建議在資料來源新增計算欄位，判斷是否為文章頁（3 層路徑）。</li>
+      <li><strong>Doctor-43/44/76 的 QR Code 場景尚未出現在 Looker</strong> — 請確認三位醫師的 UTM 參數 utm_source 是否正確設定，才能追蹤各掃描地點效益。</li>
+      <li><strong>缺乏週對週比較欄位（WoW %）</strong> — Looker 目前需手動切換日期比較，建議增加「本週 vs 上週」並排表格。</li>
+      <li><strong>無轉換事件追蹤</strong> — 無法得知使用者是否點擊電話、CTA、或預約。建議在 GA4 設定「電話點擊」「CTA 點擊」等關鍵事件。</li>
+      <li><strong>Doctor-44 W23 流量驟降為零需追查</strong> — W22 有 23 次瀏覽，W23 零流量，可能是 QR 被移除或破損，建議實地確認。</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    本報告由 Claude 手動彙整，數據截至 2026 年 6 月 7 日（週日）。前台數據排除 /medify-dashboard 管理路徑。
+  </div>
+
+</div>
+</div>
+
+<script>
+  const CORRECT = '9053';
+  function checkPw() {
+    const v = document.getElementById('pw').value;
+    if (v === CORRECT) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('report').style.display = 'block';
+    } else {
+      document.getElementById('pw-error').style.display = 'block';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  }
+  document.getElementById('pw').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPw();
+  });
+</script>
+</body>
+</html>
